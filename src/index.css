@@ -1,0 +1,191 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* =========================================================
+   GLOBAL RESET
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  min-height: 100%;
+  font-size: 16px;
+}
+
+body {
+  min-width: 1200px;
+  background: #f4f7fb;
+  color: #071d35;
+
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
+
+/*
+  Main page heading
+  Example: Dashboard, Data Records, Settings
+*/
+h1 {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  color: #071d35;
+}
+
+/*
+  Main section heading
+  Example: Water Quality Trends, Filter Records
+*/
+h2 {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #071d35;
+}
+
+/*
+  Card / smaller section heading
+*/
+h3 {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #071d35;
+}
+
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  color: #071d35;
+}
+
+p {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   COMMON TEXT SIZES
+   ========================================================= */
+
+.small-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.kicker,
+.section-kicker {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.muted-text {
+  font-size: 14px;
+  color: #7086a3;
+}
+
+/* =========================================================
+   FORM ELEMENTS
+   ========================================================= */
+
+button,
+input,
+textarea,
+select {
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 15px;
+}
+
+button {
+  font-weight: 500;
+}
+
+input,
+textarea,
+select {
+  font-weight: 400;
+}
+
+/* =========================================================
+   LINKS
+   ========================================================= */
+
+a {
+  font-family: "Inter", Arial, sans-serif;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* =========================================================
+   DASHBOARD NUMBERS
+   ========================================================= */
+
+.dashboard-value {
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+/* =========================================================
+   RESPONSIVE TYPOGRAPHY
+   ========================================================= */
+
+@media (max-width: 1400px) {
+  h1 {
+    font-size: 34px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+
+  body {
+    font-size: 15px;
+  }
+}

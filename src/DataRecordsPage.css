@@ -1,0 +1,643 @@
+/* =========================================
+   DATA RECORDS PAGE
+   ========================================= */
+
+.records-page {
+  width: 100%;
+  padding: 28px 45px 50px;
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   PAGE INTRO
+   ========================================= */
+
+.records-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 24px;
+}
+
+.records-kicker {
+  margin: 0 0 18px;
+  color: #2787e8;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.records-intro h2 {
+  margin: 0 0 14px;
+  color: #0b1f35;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.records-intro > div:first-child > p:last-child {
+  margin: 0;
+  color: #6f849d;
+  font-size: 15px;
+}
+
+
+/* =========================================
+   CONNECTION STATUS
+   ========================================= */
+
+.records-system-status {
+  min-width: 210px;
+  padding: 22px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f1faf7;
+  border: 1px solid #d8eee7;
+  border-radius: 15px;
+}
+
+.records-status-dot {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #17b89b;
+  box-shadow:
+    0 0 0 7px rgba(23, 184, 155, 0.12);
+}
+
+.records-system-status strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #0b1f35;
+  font-size: 14px;
+}
+
+.records-system-status small {
+  display: block;
+  color: #71869f;
+  font-size: 12px;
+}
+
+
+/* =========================================
+   SUMMARY
+   ========================================= */
+
+.records-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.records-summary-card {
+  min-height: 100px;
+  padding: 22px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #ffffff;
+  border: 1px solid #dfe7ef;
+  border-radius: 15px;
+  box-shadow:
+    0 4px 14px rgba(21, 54, 84, 0.03);
+  box-sizing: border-box;
+}
+
+.records-summary-icon {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.records-summary-icon.blue {
+  color: #2787e8;
+  background: #edf5ff;
+}
+
+.records-summary-icon.green {
+  color: #17b89b;
+  background: #eaf9f5;
+}
+
+.records-summary-icon.red {
+  color: #d9534f;
+  background: #fff0f0;
+}
+
+.records-summary-icon.orange {
+  color: #d98b20;
+  background: #fff6e8;
+}
+
+.records-summary-card span {
+  display: block;
+  margin-bottom: 7px;
+  color: #8193a8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.records-summary-card strong {
+  display: block;
+  color: #172c43;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.records-summary-card .latest-time {
+  font-size: 17px;
+}
+
+
+/* =========================================
+   GENERAL PANEL
+   ========================================= */
+
+.records-panel {
+  width: 100%;
+  margin-bottom: 24px;
+  padding: 26px;
+  background: #ffffff;
+  border: 1px solid #dfe7ef;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 14px rgba(21, 54, 84, 0.03);
+  box-sizing: border-box;
+}
+
+.records-panel-header {
+  min-height: 54px;
+  padding-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 25px;
+  border-bottom: 1px solid #e8edf2;
+}
+
+.records-panel-header h3 {
+  margin: 0 0 8px;
+  color: #0b1f35;
+  font-size: 19px;
+}
+
+.records-panel-header p {
+  margin: 0;
+  color: #7b8fa6;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================
+   FILTERS
+   ========================================= */
+
+.records-filters {
+  padding-top: 22px;
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1.5fr;
+  gap: 18px;
+}
+
+.record-filter-field {
+  min-width: 0;
+}
+
+.record-filter-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #71859c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.record-filter-field input,
+.record-filter-field select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d8e1ea;
+  border-radius: 9px;
+  background: #fbfcfd;
+  color: #536b82;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.record-filter-field input:focus,
+.record-filter-field select:focus {
+  border-color: #2787e8;
+  box-shadow:
+    0 0 0 3px rgba(39, 135, 232, 0.08);
+}
+
+.search-input-wrapper {
+  position: relative;
+}
+
+.search-input-wrapper > span {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8b9daf;
+  font-size: 17px;
+  pointer-events: none;
+}
+
+.search-input-wrapper input {
+  padding-left: 38px;
+}
+
+.clear-filters {
+  padding: 8px 13px;
+  border: 1px solid #d8e1ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #536b82;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clear-filters:hover {
+  border-color: #2787e8;
+  color: #2787e8;
+}
+
+
+/* =========================================
+   DATA TABLE
+   ========================================= */
+
+.records-table-wrapper {
+  margin-top: 22px;
+  overflow-x: auto;
+  border: 1px solid #e2e9ef;
+  border-radius: 11px;
+}
+
+.records-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.records-table thead {
+  background: #f8fafc;
+}
+
+.records-table th {
+  height: 45px;
+  padding: 0 18px;
+  color: #8193a8;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-align: left;
+  border-bottom: 1px solid #e2e9ef;
+}
+
+.records-table th:first-child {
+  width: 25%;
+}
+
+.records-table th:nth-child(2) {
+  width: 15%;
+}
+
+.records-table th:nth-child(3) {
+  width: 20%;
+}
+
+.records-table th:nth-child(4) {
+  width: 20%;
+}
+
+.records-table th:last-child {
+  width: 20%;
+}
+
+.records-table td {
+  height: 70px;
+  padding: 0 18px;
+  color: #536b82;
+  font-size: 12px;
+  border-bottom: 1px solid #edf1f4;
+}
+
+.records-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.records-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+
+/* =========================================
+   DATE / TIME
+   ========================================= */
+
+.record-date strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #172c43;
+  font-size: 12px;
+}
+
+.record-date small {
+  color: #8193a8;
+  font-size: 11px;
+}
+
+
+/* =========================================
+   READINGS
+   ========================================= */
+
+.reading-value {
+  color: #172c43;
+  font-size: 13px;
+}
+
+.reading-unit {
+  margin-left: 5px;
+  color: #8a9bad;
+  font-size: 10px;
+}
+
+
+/* =========================================
+   RECORD STATUS
+   ========================================= */
+
+.record-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 18px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.record-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.record-status.normal {
+  color: #138f7b;
+  background: #eaf9f5;
+}
+
+.record-status.normal i {
+  background: #17b89b;
+}
+
+.record-status.critical {
+  color: #c23d39;
+  background: #fff0f0;
+}
+
+.record-status.critical i {
+  background: #d9534f;
+}
+
+
+/* =========================================
+   TABLE MESSAGE
+   ========================================= */
+
+.table-message {
+  height: 240px !important;
+  text-align: center;
+}
+
+.records-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.records-empty-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f1f4f7;
+  color: #8294a7;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.records-empty strong {
+  margin-bottom: 6px;
+  color: #536b82;
+  font-size: 13px;
+}
+
+.records-empty p {
+  margin: 0;
+  color: #8a9bad;
+  font-size: 11px;
+}
+
+
+/* =========================================
+   INFORMATION PANEL
+   ========================================= */
+
+.records-info-panel {
+  margin-bottom: 24px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  background: #f7fafc;
+  border: 1px solid #e0e8ef;
+  border-radius: 14px;
+}
+
+.records-info-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #edf5ff;
+  color: #2787e8;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.records-info-panel h3 {
+  margin: 1px 0 7px;
+  color: #172c43;
+  font-size: 14px;
+}
+
+.records-info-panel p {
+  max-width: 850px;
+  margin: 0;
+  color: #71859c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+
+/* =========================================
+   DARK THEME
+   ========================================= */
+
+body[data-theme="dark"] .records-intro h2,
+body[data-theme="dark"] .records-panel-header h3,
+body[data-theme="dark"] .records-summary-card strong,
+body[data-theme="dark"] .record-date strong,
+body[data-theme="dark"] .reading-value,
+body[data-theme="dark"] .records-info-panel h3 {
+  color: #edf5f8;
+}
+
+body[data-theme="dark"] .records-intro > div:first-child > p:last-child,
+body[data-theme="dark"] .records-panel-header p,
+body[data-theme="dark"] .record-date small,
+body[data-theme="dark"] .reading-unit,
+body[data-theme="dark"] .records-info-panel p {
+  color: #9db2c0;
+}
+
+body[data-theme="dark"] .records-system-status {
+  background: #10352f;
+  border-color: #24594e;
+}
+
+body[data-theme="dark"] .records-system-status strong {
+  color: #edf5f8;
+}
+
+body[data-theme="dark"] .records-system-status small {
+  color: #9db2c0;
+}
+
+body[data-theme="dark"] .records-summary-card,
+body[data-theme="dark"] .records-panel {
+  background: #0c2637;
+  border-color: #1d4255;
+}
+
+body[data-theme="dark"] .records-panel-header {
+  border-color: #244658;
+}
+
+body[data-theme="dark"] .record-filter-field input,
+body[data-theme="dark"] .record-filter-field select,
+body[data-theme="dark"] .clear-filters {
+  background: #102f41;
+  border-color: #315467;
+  color: #b6c7d2;
+}
+
+body[data-theme="dark"] .records-table-wrapper {
+  border-color: #315467;
+}
+
+body[data-theme="dark"] .records-table thead {
+  background: #102f41;
+}
+
+body[data-theme="dark"] .records-table th {
+  border-color: #315467;
+}
+
+body[data-theme="dark"] .records-table td {
+  border-color: #244658;
+}
+
+body[data-theme="dark"] .records-table tbody tr:hover {
+  background: #102f41;
+}
+
+body[data-theme="dark"] .records-info-panel {
+  background: #102f41;
+  border-color: #315467;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 1150px) {
+
+  .records-page {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+
+  .records-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .records-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .search-field {
+    grid-column: 1 / -1;
+  }
+
+}
+
+
+@media (max-width: 800px) {
+
+  .records-intro {
+    flex-direction: column;
+  }
+
+  .records-system-status {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .records-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .records-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .search-field {
+    grid-column: auto;
+  }
+
+  .records-panel {
+    padding: 20px;
+  }
+
+}
