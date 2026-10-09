@@ -248,14 +248,19 @@ const loadedRecords = Object.entries(data)
                 (filteredRecords.length - 1)) *
               width;
 
-        const normalized =
-          (value - minimum) / range;
+      const normalized =
+  (value - minimum) / range;
 
-        const y =
-          height -
-          padding -
-          normalized *
-            (height - padding * 2);
+const clampedNormalized = Math.max(
+  0,
+  Math.min(1, normalized)
+);
+
+const y =
+  height -
+  padding -
+  clampedNormalized *
+    (height - padding * 2);
 
         return `${x},${y}`;
       })
@@ -267,7 +272,7 @@ const loadedRecords = Object.entries(data)
   // =========================================
 
   const phChartMin = 5;
-  const phChartMax = 10;
+  const phChartMax = 14;
 
   const temperatureValues = filteredRecords.map(
     (record) => record.temperature
@@ -675,6 +680,7 @@ const loadedRecords = Object.entries(data)
                   viewBox="0 0 700 220"
                   preserveAspectRatio="none"
                   className="trend-svg"
+                  style={{ overflow: "hidden" }}
                 >
                   <polyline
                     points={createPoints(

@@ -460,85 +460,67 @@ const saveReading = async () => {
   // BUILD CHART POINTS
   // =========================================
 
-  const buildChartPoints = (
-    values,
-    min,
-    max
-  ) => {
+const buildChartPoints = (
+  values,
+  min,
+  max
+) => {
+  if (values.length === 0) {
+    return "";
+  }
 
-    if (values.length === 0) {
-      return "";
-    }
+  const width = 600;
+  const height = 200;
+  const padding = 8;
 
+  return values
+    .map((value, index) => {
+      const x =
+        values.length === 1
+          ? width / 2
+          : (index / (values.length - 1)) * width;
 
-    const width = 600;
-    const height = 200;
+      const numericValue = Number(value);
 
+      // Keep missing or invalid readings from breaking the chart.
+      if (!Number.isFinite(numericValue)) {
+        return null;
+      }
 
-    return values
-      .map((value, index) => {
+      // Convert this parameter's value to its own 0–1 scale.
+      const normalised = Math.max(
+        0,
+        Math.min(1, (numericValue - min) / (max - min))
+      );
 
-        const x =
-          values.length === 1
-            ? width / 2
-            : (index /
-                (values.length - 1)) *
-              width;
+      const y =
+        height -
+        padding -
+        normalised * (height - padding * 2);
 
+      return `${x},${y}`;
+    })
+    .filter((point) => point !== null)
+    .join(" ");
+};
 
-        const normalised =
-          normaliseValue(
-            value,
-            min,
-            max
-          );
+const phChartPoints = buildChartPoints(
+  chartRecords.map((record) => record.ph),
+  0,
+  14
+);
 
+const temperatureChartPoints = buildChartPoints(
+  chartRecords.map((record) => record.temperature),
+  15,
+  35
+);
 
-        const y =
-          height -
-          (normalised / 10) *
-            height;
-
-
-        return `${x},${y}`;
-
-      })
-      .join(" ");
-
-  };
-
-
-  const phChartPoints =
-    buildChartPoints(
-      chartRecords.map(
-        (record) => record.ph
-      ),
-      4,
-      10
-    );
-
-
-  const temperatureChartPoints =
-    buildChartPoints(
-      chartRecords.map(
-        (record) =>
-          record.temperature
-      ),
-      0,
-      40
-    );
-
-
-  const turbidityChartPoints =
-    buildChartPoints(
-      chartRecords.map(
-        (record) =>
-          record.turbidity
-      ),
-      0,
-      10
-    );
-
+const turbidityChartPoints = buildChartPoints(
+  chartRecords.map((record) => record.turbidity),
+  0,
+  10
+);
 
   // =========================================
   // CHART TIME LABELS
@@ -1084,16 +1066,13 @@ const saveReading = async () => {
 
                   <div className="chart">
 
-                    <div className="y-labels">
-
-                      <span>10</span>
-                      <span>8</span>
-                      <span>6</span>
-                      <span>4</span>
-                      <span>2</span>
-                      <span>0</span>
-
-                    </div>
+<div className="y-labels">
+  <span>
+    Relative
+    <br />
+    scale
+  </span>
+</div>
 
 
                     <div className="plot">
@@ -1243,12 +1222,7 @@ const saveReading = async () => {
 
 
                 <p className="chart-note">
-                  The chart uses the latest
-                  recorded measurements from
-                  the connected monitoring
-                  system. Detailed analysis is
-                  available under Trends &amp;
-                  Analysis.
+                Recent pH, temperature, and turbidity readings, plotted on independent scales.
                 </p>
 
               </article>

@@ -251,6 +251,68 @@ setLoading(false);
       ? records[0]
       : null;
 
+// =========================================
+// EXPORT RECORDS TO CSV
+// =========================================
+
+const exportRecordsToCSV = () => {
+  // Export all records, not only the filtered table.
+  if (records.length === 0) {
+    alert("There are no records to export.");
+    return;
+  }
+
+  const headers = [
+    "Timestamp",
+    "Date",
+    "Time",
+    "pH",
+    "Temperature (°C)",
+    "Turbidity (NTU)",
+    "Status",
+  ];
+
+  const escapeCSV = (value) => {
+    const text = String(value ?? "");
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+
+  const rows = records.map((record) => [
+    new Date(record.timestamp).toISOString(),
+    formatDate(record.timestamp),
+    formatTime(record.timestamp),
+    record.ph,
+    record.temperature,
+    record.turbidity,
+    getRecordStatus(record),
+  ]);
+
+  const csvContent = [
+    headers.map(escapeCSV).join(","),
+    ...rows.map((row) => row.map(escapeCSV).join(",")),
+  ].join("\r\n");
+
+  // Add a UTF-8 BOM to improve compatibility with Excel.
+  const blob = new Blob(
+    ["\uFEFF", csvContent],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `AquaMonitor_Records_${new Date()
+    .toISOString()
+    .slice(0, 10)}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+};
+
   // =========================================
   // CLEAR FILTERS
   // =========================================
@@ -469,23 +531,26 @@ setLoading(false);
 
       <section className="records-panel">
 
-        <div className="records-panel-header">
-          <div>
-            <h3>
-              Recorded Measurements
-            </h3>
+<div className="records-panel-header">
+  <div>
+    <h3>Recorded Measurements</h3>
 
-            <p>
-              {filteredRecords.length.toLocaleString()}{" "}
-              record
-              {filteredRecords.length === 1
-                ? ""
-                : "s"}{" "}
-              displayed
-            </p>
-          </div>
-        </div>
+    <p>
+      {filteredRecords.length.toLocaleString()}{" "}
+      record
+      {filteredRecords.length === 1 ? "" : "s"} displayed
+    </p>
+  </div>
 
+  <button
+    type="button"
+    className="export-records-button"
+    onClick={exportRecordsToCSV}
+    disabled={loading || records.length === 0}
+  >
+    ↓ Export CSV
+  </button>
+</div>
         <div className="records-table-wrapper">
 
           <table className="records-table">

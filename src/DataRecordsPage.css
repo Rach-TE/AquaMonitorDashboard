@@ -641,3 +641,41 @@ body[data-theme="dark"] .records-info-panel {
   }
 
 }
+
+.export-records-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 15px;
+  border: 1px solid #cfe3f7;
+  border-radius: 9px;
+
+  background: #eaf4ff;
+  color: #176fc5;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.export-records-button:hover:not(:disabled) {
+  background: #dceeff;
+}
+
+.export-records-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.records-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
