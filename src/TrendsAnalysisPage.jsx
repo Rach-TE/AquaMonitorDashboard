@@ -14,7 +14,7 @@ function TrendsAnalysisPage() {
   // =========================================
 
   useEffect(() => {
-    const historyRef = ref(database, "waterQuality/history");
+    const historyRef = ref(database, "WaterQuality/History");
 
     const unsubscribe = onValue(
       historyRef,
@@ -27,22 +27,24 @@ function TrendsAnalysisPage() {
           return;
         }
 
-        const loadedRecords = Object.entries(data)
-          .map(([id, value]) => ({
-            id,
-            ph: Number(value?.ph ?? 0),
-            temperature: Number(value?.temperature ?? 0),
-            turbidity: Number(value?.turbidity ?? 0),
-            timestamp: Number(value?.timestamp ?? 0),
-          }))
-          .filter(
-            (record) =>
-              record.timestamp > 0 &&
-              Number.isFinite(record.ph) &&
-              Number.isFinite(record.temperature) &&
-              Number.isFinite(record.turbidity)
-          )
-          .sort((a, b) => a.timestamp - b.timestamp);
+       
+const loadedRecords = Object.entries(data)
+  .map(([id, value]) => ({
+    id,
+    ph: value?.pH == null ? NaN : Number(value.pH),
+    temperature: value?.temp == null ? NaN : Number(value.temp),
+    turbidity:
+      value?.turbidity == null ? NaN : Number(value.turbidity),
+    timestamp: Number(value?.timestamp),
+  }))
+  .filter(
+    (record) =>
+      record.timestamp > 0 &&
+      Number.isFinite(record.ph) &&
+      Number.isFinite(record.temperature) &&
+      Number.isFinite(record.turbidity)
+  )
+  .sort((a, b) => a.timestamp - b.timestamp);
 
         setRecords(loadedRecords);
         setLoading(false);
@@ -655,11 +657,11 @@ function TrendsAnalysisPage() {
             <div className="trend-chart">
               <div className="trend-y-labels">
                 <span>10</span>
+                <span>9</span>
                 <span>8</span>
+                <span>7</span>
                 <span>6</span>
-                <span>4</span>
-                <span>2</span>
-                <span>0</span>
+                <span>5</span>
               </div>
 
               <div className="trend-plot">
@@ -754,33 +756,35 @@ function TrendsAnalysisPage() {
 
             <div className="trend-chart">
               <div className="trend-y-labels">
-                <span>{temperatureMax}</span>
+               
+<span>{temperatureMax}</span>
 
-                <span>
-                  {Math.round(
-                    temperatureMax * 0.8
-                  )}
-                </span>
+<span>
+  {Math.round(
+    temperatureMax - (temperatureMax - temperatureMin) * 0.2
+  )}
+</span>
 
-                <span>
-                  {Math.round(
-                    temperatureMax * 0.6
-                  )}
-                </span>
+<span>
+  {Math.round(
+    temperatureMax - (temperatureMax - temperatureMin) * 0.4
+  )}
+</span>
 
-                <span>
-                  {Math.round(
-                    temperatureMax * 0.4
-                  )}
-                </span>
+<span>
+  {Math.round(
+    temperatureMax - (temperatureMax - temperatureMin) * 0.6
+  )}
+</span>
 
-                <span>
-                  {Math.round(
-                    temperatureMax * 0.2
-                  )}
-                </span>
+<span>
+  {Math.round(
+    temperatureMax - (temperatureMax - temperatureMin) * 0.8
+  )}
+</span>
 
-                <span>0</span>
+<span>{temperatureMin}</span>
+
               </div>
 
               <div className="trend-plot">
@@ -955,15 +959,15 @@ function TrendsAnalysisPage() {
                 {filteredRecords.length === 1 ? "" : "s"}.
                 The average pH was{" "}
                 <strong>
-                  {phStats.average.toFixed(1)}
+                  {formatStat(phStats.average)}
                 </strong>
                 , average temperature was{" "}
                 <strong>
-                  {temperatureStats.average.toFixed(1)} °C
+                  {formatStat(temperatureStats.average, " °C")}
                 </strong>
                 , and average turbidity was{" "}
                 <strong>
-                  {turbidityStats.average.toFixed(1)} NTU
+                  {formatStat(turbidityStats.average, " NTU")}
                 </strong>
                 .
               </p>

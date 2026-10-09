@@ -23,7 +23,7 @@ function DataRecordsPage() {
   useEffect(() => {
     const historyRef = ref(
       database,
-      "waterQuality/history"
+      "WaterQuality/History"
     );
 
     const unsubscribe = onValue(
@@ -38,33 +38,27 @@ function DataRecordsPage() {
         }
 
         const loadedRecords = Object.entries(data)
-          .map(([id, value]) => ({
-            id,
-            ph: Number(value?.ph ?? 0),
-            temperature: Number(
-              value?.temperature ?? 0
-            ),
-            turbidity: Number(
-              value?.turbidity ?? 0
-            ),
-            timestamp: Number(
-              value?.timestamp ?? 0
-            ),
-          }))
-          .filter(
-            (record) =>
-              record.timestamp > 0 &&
-              Number.isFinite(record.ph) &&
-              Number.isFinite(record.temperature) &&
-              Number.isFinite(record.turbidity)
-          )
-          .sort(
-            (a, b) =>
-              b.timestamp - a.timestamp
-          );
+  .map(([id, value]) => ({
+    id,
+    ph: Number(value?.pH ?? 0),
+    temperature: Number(value?.temp ?? 0),
+    turbidity: Number(value?.turbidity ?? 0),
+    timestamp: Number(value?.timestamp ?? 0),
+  }))
+  .filter(
+    (record) =>
+      record.timestamp > 0 &&
+      Number.isFinite(record.ph) &&
+      Number.isFinite(record.temperature) &&
+      Number.isFinite(record.turbidity)
+  )
+  .sort(
+    (a, b) => b.timestamp - a.timestamp
+  );
 
-        setRecords(loadedRecords);
-        setLoading(false);
+setRecords(loadedRecords);
+setLoading(false);
+
       },
       (error) => {
         console.error(

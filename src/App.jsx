@@ -94,122 +94,80 @@ function App() {
   // READ CURRENT VALUES FROM FIREBASE
   // =========================================
 
-  useEffect(() => {
+ 
+useEffect(() => {
+  const readingsRef = ref(
+    database,
+    "WaterQuality/Current"
+  );
 
-    const readingsRef = ref(
-      database,
-      "waterQuality/current"
-    );
+  const unsubscribe = onValue(
+    readingsRef,
+    (snapshot) => {
+      const data = snapshot.val();
 
-
-    const unsubscribe = onValue(
-      readingsRef,
-      (snapshot) => {
-
-        const data = snapshot.val();
-
-
-        if (data) {
-
-          setReadings({
-            ph: Number(data.ph ?? 0),
-            temperature: Number(
-              data.temperature ?? 0
-            ),
-            turbidity: Number(
-              data.turbidity ?? 0
-            ),
-          });
-
-        }
-
-      },
-      (error) => {
-
-        console.error(
-          "Error reading current water-quality data:",
-          error
-        );
-
+      if (data) {
+        setReadings({
+          ph: Number(data.pH ?? 0),
+          temperature: Number(data.temp ?? 0),
+          turbidity: Number(data.turbidity ?? 0),
+        });
       }
-    );
+    },
+    (error) => {
+      console.error(
+        "Error reading current water-quality data:",
+        error
+      );
+    }
+  );
 
-
-    return () => unsubscribe();
-
-  }, []);
-
+  return () => unsubscribe();
+}, []);
 
   // =========================================
   // READ HISTORICAL VALUES FROM FIREBASE
   // =========================================
 
-  useEffect(() => {
+useEffect(() => {
+  const historyRef = ref(
+    database,
+    "WaterQuality/History"
+  );
 
-    const historyRef = ref(
-      database,
-      "waterQuality/history"
-    );
+  const unsubscribe = onValue(
+    historyRef,
+    (snapshot) => {
+      const data = snapshot.val();
 
-
-    const unsubscribe = onValue(
-      historyRef,
-      (snapshot) => {
-
-        const data = snapshot.val();
-
-
-        if (!data) {
-
-          setHistory([]);
-
-          return;
-
-        }
-
-
-        const records = Object.entries(data)
-          .map(([id, value]) => ({
-            id,
-            ph: Number(value?.ph ?? 0),
-            temperature: Number(
-              value?.temperature ?? 0
-            ),
-            turbidity: Number(
-              value?.turbidity ?? 0
-            ),
-            timestamp: Number(
-              value?.timestamp ?? 0
-            ),
-          }))
-          .filter(
-            (record) =>
-              record.timestamp > 0
-          )
-          .sort(
-            (a, b) =>
-              a.timestamp - b.timestamp
-          );
-
-
-        setHistory(records);
-
-      },
-      (error) => {
-
-        console.error(
-          "Error reading water-quality history:",
-          error
-        );
-
+      if (!data) {
+        setHistory([]);
+        return;
       }
-    );
 
+      const records = Object.entries(data)
+        .map(([id, value]) => ({
+          id,
+          ph: Number(value?.pH ?? 0),
+          temperature: Number(value?.temp ?? 0),
+          turbidity: Number(value?.turbidity ?? 0),
+          timestamp: Number(value?.timestamp ?? 0),
+        }))
+        .filter((record) => record.timestamp > 0)
+        .sort((a, b) => a.timestamp - b.timestamp);
 
-    return () => unsubscribe();
+      setHistory(records);
+    },
+    (error) => {
+      console.error(
+        "Error reading water-quality history:",
+        error
+      );
+    }
+  );
 
-  }, []);
-
+  return () => unsubscribe();
+}, []);
 
   // =========================================
   // LIVE DASHBOARD CLOCK
@@ -233,47 +191,28 @@ function App() {
   // SAVE READING TO FIREBASE HISTORY
   // =========================================
 
-  const saveReading = async () => {
+  
+const saveReading = async () => {
+  try {
+    const historyRef = ref(
+      database,
+      "WaterQuality/History"
+    );
 
-    try {
+    const newReadingRef = push(historyRef);
 
-      const historyRef = ref(
-        database,
-        "waterQuality/history"
-      );
+    await set(newReadingRef, {
+      pH: readings.ph,
+      temp: readings.temperature,
+      turbidity: readings.turbidity,
+      timestamp: Date.now(),
+    });
 
-
-      const newReadingRef = push(
-        historyRef
-      );
-
-
-      await set(
-        newReadingRef,
-        {
-          ph: readings.ph,
-          temperature: readings.temperature,
-          turbidity: readings.turbidity,
-          timestamp: Date.now(),
-        }
-      );
-
-
-      console.log(
-        "Reading saved to history."
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Error saving reading:",
-        error
-      );
-
-    }
-
-  };
-
+    console.log("Reading saved to history.");
+  } catch (error) {
+    console.error("Error saving reading:", error);
+  }
+};
 
   // =========================================
   // WATER QUALITY STATUS LOGIC
