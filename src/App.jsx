@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import { onValue, ref, push, set } from "firebase/database";
 
-import { database } from "./firebase";
+import { auth, database } from "./firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import "./App.css";
 
 import LandingPage from "./LandingPage";
+import LoginPage from "./LoginPage";
 import "./LandingPage.css";
 
 import AlertsPage from "./AlertsPage";
@@ -21,6 +23,18 @@ function App() {
   // =========================================
   // LANDING PAGE
   // =========================================
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+    useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const [showLanding, setShowLanding] = useState(true);
 
@@ -93,10 +107,10 @@ function App() {
   // =========================================
   // READ CURRENT VALUES FROM FIREBASE
   // =========================================
-
- 
 useEffect(() => {
-  const readingsRef = ref(
+    if (!currentUser) return;
+
+    const readingsRef = ref(
     database,
     "WaterQuality/Current"
   );
@@ -123,14 +137,16 @@ useEffect(() => {
   );
 
   return () => unsubscribe();
-}, []);
+}, [currentUser]);
 
   // =========================================
   // READ HISTORICAL VALUES FROM FIREBASE
   // =========================================
 
 useEffect(() => {
-  const historyRef = ref(
+    if (!currentUser) return;
+
+    const historyRef = ref(
     database,
     "WaterQuality/History"
   );
@@ -167,7 +183,7 @@ useEffect(() => {
   );
 
   return () => unsubscribe();
-}, []);
+}, [currentUser]);
 
   // =========================================
   // LIVE DASHBOARD CLOCK
@@ -191,7 +207,16 @@ useEffect(() => {
   // SAVE READING TO FIREBASE HISTORY
   // =========================================
 
-  
+const handleLogout = async () => {
+  try {
+    await signOut(auth);
+    setShowLanding(true);
+    setActivePage("Dashboard");
+  } catch (error) {
+    console.error("Error signing out:", error);
+  }
+};
+
 const saveReading = async () => {
   try {
     const historyRef = ref(
@@ -670,19 +695,17 @@ const turbidityChartPoints = buildChartPoints(
   // =========================================
   // LANDING PAGE
   // =========================================
+if (showLanding) {
+  return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+}
 
-  if (showLanding) {
+if (authLoading) {
+  return <div className="loading-screen">Checking authentication...</div>;
+}
 
-    return (
-      <LandingPage
-        onGetStarted={() =>
-          setShowLanding(false)
-        }
-      />
-    );
-
-  }
-
+if (!currentUser) {
+  return <LoginPage />;
+}
 
   // =========================================
   // MAIN APPLICATION
@@ -819,28 +842,35 @@ const turbidityChartPoints = buildChartPoints(
           <div className="topbar-right">
 
 
-            {/* OPERATOR */}
+{/* OPERATOR */}
 
-            <div className="operator-block">
+<div className="operator-block">
 
-              <div className="avatar">
-                OP
-              </div>
+  <div className="avatar">
+    {currentUser?.email?.charAt(0).toUpperCase() || "OP"}
+  </div>
 
+  <div className="operator">
 
-              <div className="operator">
+    <strong>
+      {currentUser?.email || "Operator"}
+    </strong>
 
-                <strong>
-                  Operator
-                </strong>
+    <small>
+      Plant Operator
+    </small>
 
-                <small>
-                  Plant Operator
-                </small>
+  </div>
 
-              </div>
+  <button
+    type="button"
+    onClick={handleLogout}
+    className="logout-button"
+  >
+    Logout
+  </button>
 
-            </div>
+</div>
 
 
             <div className="header-divider" />
@@ -897,7 +927,8 @@ const turbidityChartPoints = buildChartPoints(
 
               {/* SYSTEM STATUS */}
 
-              <div className="system-online">
+
+<div className={`system-online ${systemStatus.className}`}>
 
                 <div className="system-online-icon">
 
@@ -954,9 +985,12 @@ const turbidityChartPoints = buildChartPoints(
                       </div>
 
 
-                      <span className="status-badge">
-                        {item.status}
-                      </span>
+
+<span
+  className={`status-badge ${item.status.toLowerCase()}`}
+>
+  {item.status}
+</span>
 
                     </div>
 
@@ -1414,7 +1448,7 @@ const turbidityChartPoints = buildChartPoints(
                 </div>
 
 
-                <span className="status-badge">
+                <span className={`status-badge ${overallStatus.toLowerCase()}`}>
                   {overallStatus}
                 </span>
 

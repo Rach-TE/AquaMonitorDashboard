@@ -567,30 +567,81 @@ nav {
 .online-pulse {
   width: 8px;
   height: 8px;
-
   border-radius: 50%;
-
   background: #18b887;
-
-  box-shadow:
-    0 0 0 4px rgba(24, 184, 135, 0.12);
+  box-shadow: 0 0 0 4px rgba(24, 184, 135, 0.12);
 }
+
+/* Status-specific indicator colours */
+.online-pulse.normal {
+  background: #16845b;
+  box-shadow: 0 0 0 4px rgba(22, 132, 91, 0.14);
+}
+
+.online-pulse.warning {
+  background: #c98216;
+  box-shadow: 0 0 0 4px rgba(201, 130, 22, 0.16);
+}
+
+.online-pulse.critical {
+  background: #c63d36;
+  box-shadow: 0 0 0 4px rgba(198, 61, 54, 0.15);
+}
+
+.online-pulse.waiting,
+.online-pulse.invalid {
+  background: #64748b;
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.14);
+}
+
 
 .system-online strong {
   display: block;
-
   color: #16806a;
-
   font-size: 10px;
 }
 
+.system-online.critical strong {
+  color: #c63d36;
+}
+
+.system-online.warning strong {
+  color: #b7791f;
+}
+
+.system-online.normal strong {
+  color: #16806a;
+}
+
+.system-online.waiting strong {
+  color: #64748b;
+}
+
+.system-online.critical {
+  border-color: #f5b7b1;
+  background: #fff5f4;
+}
+
+.system-online.warning {
+  border-color: #f4d49b;
+  background: #fffaf0;
+}
+
+.system-online.normal {
+  border-color: #bce8d9;
+  background: #f5fcf9;
+}
+
+.system-online.waiting {
+  border-color: #dbe2ea;
+  background: #f8fafc;
+}
+
+
 .system-online small {
   display: block;
-
   margin-top: 2px;
-
   color: #89958f;
-
   font-size: 8px;
 }
 
@@ -648,28 +699,41 @@ nav {
   font-weight: 800;
 }
 
+
+/* Status badges: health colours */
 .status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 5px 9px;
-
   border-radius: 20px;
-
-  background: #edf9f5;
-
-  color: #16866d;
-
   font-size: 8px;
-
   font-weight: 800;
-
   text-transform: uppercase;
-
   letter-spacing: 0.5px;
+  background: #edf1f5;
+  color: #64748b;
+}
+
+.status-badge.normal {
+  background: #e6f7ef;
+  color: #16845b;
+}
+
+.status-badge.warning {
+  background: #fff3df;
+  color: #a65d08;
 }
 
 .status-badge.critical {
-  background: #fff0ef;
+  background: #fdecea;
+  color: #c63d36;
+}
 
-  color: #d64a43;
+.status-badge.waiting,
+.status-badge.invalid {
+  background: #eaf0f6;
+  color: #526174;
 }
 
 .parameter-name {
@@ -1638,14 +1702,26 @@ body[data-theme="dark"] .footer {
 }
 
 /* System online */
+
 .system-online strong {
   color: #147861;
   font-weight: 700;
 }
 
-.system-online small {
-  color: #63746f;
-  font-weight: 500;
+.system-online.critical strong {
+  color: #c63d36;
+}
+
+.system-online.warning strong {
+  color: #b7791f;
+}
+
+.system-online.normal strong {
+  color: #16806a;
+}
+
+.system-online.waiting strong {
+  color: #64748b;
 }
 
 /* Parameter cards */
@@ -1870,4 +1946,105 @@ body[data-theme="dark"] .page-intro small,
 body[data-theme="dark"] .page-header small,
 body[data-theme="dark"] .page-heading small {
   color: #aebdca;
+}
+
+
+/* =========================================
+   FINAL STATUS COLOUR OVERRIDES
+   ========================================= */
+
+/* Parameter and summary badges */
+.status-badge.normal {
+  background: #e6f7ef !important;
+  color: #16845b !important;
+}
+
+.status-badge.warning {
+  background: #fff3df !important;
+  color: #a65d08 !important;
+}
+
+.status-badge.critical {
+  background: #fdecea !important;
+  color: #c63d36 !important;
+}
+
+.status-badge.waiting {
+  background: #eaf0f6 !important;
+  color: #526174 !important;
+}
+
+/* Main system status */
+.system-online.critical {
+  background: #fff5f4 !important;
+  border-color: #f5b7b1 !important;
+}
+
+.system-online.critical strong {
+  color: #c63d36 !important;
+}
+
+.system-online.warning {
+  background: #fffaf0 !important;
+  border-color: #f4d49b !important;
+}
+
+.system-online.warning strong {
+  color: #b7791f !important;
+}
+
+.system-online.normal strong {
+  color: #16806a !important;
+}
+
+.system-online.waiting strong {
+  color: #64748b !important;
+}
+
+/* Preserve status colours in dark mode */
+body[data-theme="dark"] .status-badge.critical {
+  background: #5c2428 !important;
+  color: #ffaaa5 !important;
+}
+
+body[data-theme="dark"] .status-badge.warning {
+  background: #59401e !important;
+  color: #ffd18a !important;
+}
+
+body[data-theme="dark"] .status-badge.normal {
+  background: #174333 !important;
+  color: #8ce0b8 !important;
+}
+
+body[data-theme="dark"] .system-online.critical strong {
+  color: #ffaaa5 !important;
+}
+
+body[data-theme="dark"] .system-online.warning strong {
+  color: #ffd18a !important;
+}
+
+body[data-theme="dark"] .system-online.normal strong {
+  color: #8ce0b8 !important;
+}
+
+/* AUTHENTICATION - LOGOUT BUTTON */
+
+.logout-button {
+  margin-left: 12px;
+  padding: 8px 14px;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  background: transparent;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #dc2626;
+  color: #ffffff;
 }

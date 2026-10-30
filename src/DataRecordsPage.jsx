@@ -14,7 +14,8 @@ function DataRecordsPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // =========================================
   // LOAD HISTORY FROM FIREBASE
@@ -175,17 +176,22 @@ setLoading(false);
         return false;
       }
 
-      // Date filter
-      if (selectedDate) {
-        const recordDate = new Date(
-          record.timestamp
-        )
-          .toISOString()
-          .split("T")[0];
+      // Inclusive date-range filter using the operator's local dates.
+      const recordDate = new Date(record.timestamp);
+      const recordDay = new Date(
+        recordDate.getFullYear(),
+        recordDate.getMonth(),
+        recordDate.getDate()
+      ).getTime();
 
-        if (recordDate !== selectedDate) {
-          return false;
-        }
+      if (startDate) {
+        const rangeStart = new Date(`${startDate}T00:00:00`).getTime();
+        if (recordDay < rangeStart) return false;
+      }
+
+      if (endDate) {
+        const rangeEnd = new Date(`${endDate}T00:00:00`).getTime();
+        if (recordDay > rangeEnd) return false;
       }
 
       // Search
@@ -215,7 +221,8 @@ setLoading(false);
   }, [
     records,
     statusFilter,
-    selectedDate,
+    startDate,
+    endDate,
     searchTerm,
   ]);
 
@@ -255,21 +262,24 @@ setLoading(false);
 // EXPORT RECORDS TO CSV
 // =========================================
 
-const exportRecordsToCSV = () => {
-  // Export all records, not only the filtered table.
-  if (records.length === 0) {
-    alert("There are no records to export.");
+const exportRecordsToCSV = (exportAll = false) => {
+  const recordsToExport = exportAll ? records : filteredRecords;
+
+  if (!exportAll && startDate && endDate && startDate > endDate) {
+    alert("The start date cannot be later than the end date.");
+    return;
+  }
+
+  if (recordsToExport.length === 0) {
+    alert(exportAll
+      ? "There are no records to export."
+      : "There are no records matching the selected filters.");
     return;
   }
 
   const headers = [
-    "Timestamp",
-    "Date",
-    "Time",
-    "pH",
-    "Temperature (°C)",
-    "Turbidity (NTU)",
-    "Status",
+    "Timestamp", "Date", "Time", "pH",
+    "Temperature (°C)", "Turbidity (NTU)", "Status",
   ];
 
   const escapeCSV = (value) => {
@@ -277,7 +287,7 @@ const exportRecordsToCSV = () => {
     return `"${text.replace(/"/g, '""')}"`;
   };
 
-  const rows = records.map((record) => [
+  const rows = recordsToExport.map((record) => [
     new Date(record.timestamp).toISOString(),
     formatDate(record.timestamp),
     formatTime(record.timestamp),
@@ -290,26 +300,24 @@ const exportRecordsToCSV = () => {
   const csvContent = [
     headers.map(escapeCSV).join(","),
     ...rows.map((row) => row.map(escapeCSV).join(",")),
-  ].join("\r\n");
+  ].join("\\r\\n");
 
-  // Add a UTF-8 BOM to improve compatibility with Excel.
-  const blob = new Blob(
-    ["\uFEFF", csvContent],
-    { type: "text/csv;charset=utf-8;" }
-  );
+  const blob = new Blob(["\\uFEFF", csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
 
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
+  const exportLabel = exportAll ? "All_Records" : "Filtered_Records";
 
   link.href = url;
-  link.download = `AquaMonitor_Records_${new Date()
+  link.download = `AquaMonitor_${exportLabel}_${new Date()
     .toISOString()
     .slice(0, 10)}.csv`;
 
   document.body.appendChild(link);
   link.click();
   link.remove();
-
   URL.revokeObjectURL(url);
 };
 
@@ -319,7 +327,8 @@ const exportRecordsToCSV = () => {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedDate("");
+    setStartDate("");
+    setEndDate("");
     setStatusFilter("All Statuses");
   };
 
@@ -449,18 +458,22 @@ const exportRecordsToCSV = () => {
         <div className="records-filters">
 
           <div className="record-filter-field">
-            <label>
-              DATE
-            </label>
-
+            <label>START DATE</label>
             <input
               type="date"
-              value={selectedDate}
-              onChange={(event) =>
-                setSelectedDate(
-                  event.target.value
-                )
-              }
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(event) => setStartDate(event.target.value)}
+            />
+          </div>
+
+          <div className="record-filter-field">
+            <label>END DATE</label>
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => setEndDate(event.target.value)}
             />
           </div>
 
@@ -543,13 +556,22 @@ const exportRecordsToCSV = () => {
   </div>
 
   <button
-    type="button"
-    className="export-records-button"
-    onClick={exportRecordsToCSV}
-    disabled={loading || records.length === 0}
-  >
-    ↓ Export CSV
-  </button>
+     type="button"
+     className="export-records-button"
+     onClick={() => exportRecordsToCSV(false)}
+     disabled={loading || filteredRecords.length === 0}
+   >
+     ↓ Export Filtered
+   </button>
+
+   <button
+     type="button"
+     className="export-records-button"
+     onClick={() => exportRecordsToCSV(true)}
+     disabled={loading || records.length === 0}
+   >
+     ↓ Export All
+   </button>
 </div>
         <div className="records-table-wrapper">
 
