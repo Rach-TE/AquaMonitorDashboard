@@ -12,7 +12,7 @@ function RealTimeDataPage({ readings }) {
   // =========================================
 
   useEffect(() => {
-    const readingsRef = ref(database, "waterQuality/current");
+    const readingsRef = ref(database, "WaterQuality/Current");
 
     const unsubscribe = onValue(
       readingsRef,
@@ -40,28 +40,39 @@ function RealTimeDataPage({ readings }) {
       return "Waiting";
     }
 
+    // Board bands: Normal 6.5-7.5, Warning 5.0-<6.5 or >7.5-9.0, Critical <5.0 or >9.0
     if (parameter === "ph") {
-      if (numericValue < 6.5 || numericValue > 8.5) {
+      if (numericValue < 5.0 || numericValue > 9.0) {
         return "Critical";
       }
 
-      return "Normal";
-    }
-
-    if (parameter === "temperature") {
-      if (numericValue < 20 || numericValue > 28) {
+      if (numericValue < 6.5 || numericValue > 7.5) {
         return "Warning";
       }
 
       return "Normal";
     }
 
-    if (parameter === "turbidity") {
-      if (numericValue >= 5) {
+    // Board bands: Normal 20-40, Warning 10-19 or 41-50, Critical <10 or >50
+    if (parameter === "temperature") {
+      if (numericValue < 10 || numericValue > 50) {
         return "Critical";
       }
 
-      if (numericValue > 1.5) {
+      if (numericValue < 20 || numericValue > 40) {
+        return "Warning";
+      }
+
+      return "Normal";
+    }
+
+    // Board bands: Normal 0-2, Warning >2-5, Critical >5
+    if (parameter === "turbidity") {
+      if (numericValue > 5) {
+        return "Critical";
+      }
+
+      if (numericValue > 2) {
         return "Warning";
       }
 
@@ -99,7 +110,7 @@ function RealTimeDataPage({ readings }) {
       value: Number(readings?.ph ?? 0),
       unit: "pH",
       icon: "pH",
-      reference: "6.5 – 8.5",
+      reference: "6.5 – 7.5",
       accent: "blue",
     },
     {
@@ -109,7 +120,7 @@ function RealTimeDataPage({ readings }) {
       value: Number(readings?.temperature ?? 0),
       unit: "°C",
       icon: "°C",
-      reference: "20 – 28 °C",
+      reference: "20 – 40 °C",
       accent: "orange",
     },
     {
@@ -119,7 +130,7 @@ function RealTimeDataPage({ readings }) {
       value: Number(readings?.turbidity ?? 0),
       unit: "NTU",
       icon: "◉",
-      reference: "≤ 1.50 NTU",
+      reference: "0 – 2 NTU",
       accent: "green",
     },
   ];

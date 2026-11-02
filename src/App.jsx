@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { onValue, ref, push, set } from "firebase/database";
 
-import { auth, database } from "./firebase";
+import { database, auth } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import "./App.css";
 
 import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
+import "./LoginPage.css";
 import "./LandingPage.css";
 
 import AlertsPage from "./AlertsPage";
@@ -24,19 +25,11 @@ function App() {
   // LANDING PAGE
   // =========================================
 
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-    useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   const [showLanding, setShowLanding] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+  // accessRole: "visitor" = read-only view, "operator" = signed-in operator.
+  const [accessRole, setAccessRole] = useState(null);
+  const [operatorUser, setOperatorUser] = useState(null);
 
 
   // =========================================
@@ -65,6 +58,18 @@ function App() {
 
 
   // =========================================
+  // LAST UPDATE (CLIENT RECEIPT TIME, OR
+  // LATEST HISTORY TIMESTAMP WHEN AVAILABLE)
+  // Board Current node carries no timestamp;
+  // board History is written every 10 s, so a
+  // history timestamp is a true board-side time.
+  // =========================================
+
+  const [lastUpdate, setLastUpdate] =
+    useState(null);
+
+
+  // =========================================
   // CURRENT DATE AND TIME
   // =========================================
 
@@ -84,6 +89,37 @@ function App() {
     );
   });
 
+
+  // =========================================
+  // OPERATOR AUTH (stay signed in on refresh)
+  // Firebase Auth uses local persistence, so a signed-in
+  // Operator stays signed in after a refresh. Visitors do
+  // not need an account and stay read-only.
+  // =========================================
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setOperatorUser(user);
+        setAccessRole("operator");
+        setShowLanding(false);
+        setShowLogin(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+    setOperatorUser(null);
+    setAccessRole(null);
+    setShowLanding(true);
+    setShowLogin(false);
+  };
 
   // =========================================
   // APPLY THEME
@@ -107,83 +143,149 @@ function App() {
   // =========================================
   // READ CURRENT VALUES FROM FIREBASE
   // =========================================
-useEffect(() => {
-    if (!currentUser) return;
+
+  useEffect(() => {
 
     const readingsRef = ref(
-    database,
-    "WaterQuality/Current"
-  );
+      database,
+      "WaterQuality/Current"
+    );
 
-  const unsubscribe = onValue(
-    readingsRef,
-    (snapshot) => {
-      const data = snapshot.val();
 
-      if (data) {
-        setReadings({
-          ph: Number(data.pH ?? 0),
-          temperature: Number(data.temp ?? 0),
-          turbidity: Number(data.turbidity ?? 0),
-        });
+    const unsubscribe = onValue(
+      readingsRef,
+      (snapshot) => {
+
+        const data = snapshot.val();
+
+
+        if (data) {
+
+          // Board fields: pH / temp / turbidity.
+          // Old dashboard spellings kept as fallback.
+          setReadings({
+            ph: Number(
+              data.ph ?? data.pH ?? 0
+            ),
+            temperature: Number(
+              data.temperature ??
+                data.temp ??
+                0
+            ),
+            turbidity: Number(
+              data.turbidity ?? 0
+            ),
+          });
+
+          setLastUpdate(new Date());
+
+        }
+
+      },
+      (error) => {
+
+        console.error(
+          "Error reading current water-quality data:",
+          error
+        );
+
       }
-    },
-    (error) => {
-      console.error(
-        "Error reading current water-quality data:",
-        error
-      );
-    }
-  );
+    );
 
-  return () => unsubscribe();
-}, [currentUser]);
+
+    return () => unsubscribe();
+
+  }, []);
+
 
   // =========================================
   // READ HISTORICAL VALUES FROM FIREBASE
   // =========================================
 
-useEffect(() => {
-    if (!currentUser) return;
+  useEffect(() => {
 
     const historyRef = ref(
-    database,
-    "WaterQuality/History"
-  );
+      database,
+      "WaterQuality/History"
+    );
 
-  const unsubscribe = onValue(
-    historyRef,
-    (snapshot) => {
-      const data = snapshot.val();
 
-      if (!data) {
-        setHistory([]);
-        return;
+    const unsubscribe = onValue(
+      historyRef,
+      (snapshot) => {
+
+        const data = snapshot.val();
+
+
+        if (!data) {
+
+          setHistory([]);
+
+          return;
+
+        }
+
+
+        const records = Object.entries(data)
+          .map(([id, value]) => ({
+            id,
+            ph: Number(
+              value?.ph ?? value?.pH ?? 0
+            ),
+            temperature: Number(
+              value?.temperature ??
+                value?.temp ??
+                0
+            ),
+            turbidity: Number(
+              value?.turbidity ?? 0
+            ),
+            timestamp: Number(
+              value?.timestamp ?? 0
+            ),
+          }))
+          .filter(
+            (record) =>
+              record.timestamp > 0
+          )
+          .sort(
+            (a, b) =>
+              a.timestamp - b.timestamp
+          );
+
+
+        setHistory(records);
+
+        if (
+          records.length > 0 &&
+          records[records.length - 1]
+            .timestamp > 0
+        ) {
+          setLastUpdate(
+            new Date(
+              records[
+                records.length - 1
+              ].timestamp
+            )
+          );
+        }
+
+      },
+      (error) => {
+
+        console.error(
+          "Error reading water-quality history:",
+          error
+        );
+
       }
+    );
 
-      const records = Object.entries(data)
-        .map(([id, value]) => ({
-          id,
-          ph: Number(value?.pH ?? 0),
-          temperature: Number(value?.temp ?? 0),
-          turbidity: Number(value?.turbidity ?? 0),
-          timestamp: Number(value?.timestamp ?? 0),
-        }))
-        .filter((record) => record.timestamp > 0)
-        .sort((a, b) => a.timestamp - b.timestamp);
 
-      setHistory(records);
-    },
-    (error) => {
-      console.error(
-        "Error reading water-quality history:",
-        error
-      );
-    }
-  );
+    return () => unsubscribe();
 
-  return () => unsubscribe();
-}, [currentUser]);
+  }, []);
+
 
   // =========================================
   // LIVE DASHBOARD CLOCK
@@ -207,45 +309,63 @@ useEffect(() => {
   // SAVE READING TO FIREBASE HISTORY
   // =========================================
 
-const handleLogout = async () => {
-  try {
-    await signOut(auth);
-    setShowLanding(true);
-    setActivePage("Dashboard");
-  } catch (error) {
-    console.error("Error signing out:", error);
-  }
-};
+  const saveReading = async () => {
+    // Operator-only write. Visitors are read-only; this function
+    // is currently unused in the UI, but must never write for a visitor.
+    if (accessRole !== "operator") {
+      return;
+    }
 
-const saveReading = async () => {
-  try {
-    const historyRef = ref(
-      database,
-      "WaterQuality/History"
-    );
+    try {
 
-    const newReadingRef = push(historyRef);
+      const historyRef = ref(
+        database,
+        "WaterQuality/History"
+      );
 
-    await set(newReadingRef, {
-      pH: readings.ph,
-      temp: readings.temperature,
-      turbidity: readings.turbidity,
-      timestamp: Date.now(),
-    });
 
-    console.log("Reading saved to history.");
-  } catch (error) {
-    console.error("Error saving reading:", error);
-  }
-};
+      const newReadingRef = push(
+        historyRef
+      );
+
+
+      await set(
+        newReadingRef,
+        {
+          // Board field names, so dashboard-saved
+          // records match board-written history.
+          pH: readings.ph,
+          temp: readings.temperature,
+          turbidity: readings.turbidity,
+          timestamp: Date.now(),
+        }
+      );
+
+
+      console.log(
+        "Reading saved to history."
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Error saving reading:",
+        error
+      );
+
+    }
+
+  };
+
 
   // =========================================
   // WATER QUALITY STATUS LOGIC
   // =========================================
 
-  // pH:
-  // 6.5 – 8.5 = Normal
-  // Outside that range = Critical
+  // pH (board 3-level bands):
+  // 6.5 – 7.5 = Normal
+  // 5.0 – <6.5 or >7.5 – 9.0 = Warning
+  // <5.0 or >9.0 = Critical
 
   const getPhStatus = (value) => {
 
@@ -254,11 +374,13 @@ const saveReading = async () => {
     }
 
 
-    if (
-      value < 6.5 ||
-      value > 8.5
-    ) {
+    if (value < 5.0 || value > 9.0) {
       return "Critical";
+    }
+
+
+    if (value < 6.5 || value > 7.5) {
+      return "Warning";
     }
 
 
@@ -267,9 +389,10 @@ const saveReading = async () => {
   };
 
 
-  // Temperature:
-  // 20 – 28 °C = Normal
-  // Outside that range = Warning
+  // Temperature (board 3-level bands):
+  // 20 – 40 °C = Normal
+  // 10 – 19 or 41 – 50 °C = Warning
+  // <10 or >50 °C = Critical
 
   const getTemperatureStatus = (
     value
@@ -280,10 +403,12 @@ const saveReading = async () => {
     }
 
 
-    if (
-      value < 20 ||
-      value > 28
-    ) {
+    if (value < 10 || value > 50) {
+      return "Critical";
+    }
+
+
+    if (value < 20 || value > 40) {
       return "Warning";
     }
 
@@ -293,10 +418,10 @@ const saveReading = async () => {
   };
 
 
-  // Turbidity:
-  // 0 – 1.50 NTU = Normal
-  // >1.50 and <5.00 NTU = Warning
-  // >=5.00 NTU = Critical
+  // Turbidity (board 3-level bands):
+  // 0 – 2 NTU = Normal
+  // >2 – 5 NTU = Warning
+  // >5 NTU = Critical
 
   const getTurbidityStatus = (
     value
@@ -307,12 +432,12 @@ const saveReading = async () => {
     }
 
 
-    if (value >= 5.0) {
+    if (value > 5.0) {
       return "Critical";
     }
 
 
-    if (value > 1.5) {
+    if (value > 2) {
       return "Warning";
     }
 
@@ -347,12 +472,15 @@ const saveReading = async () => {
     readings.turbidity !== 0;
 
 
+  // Overall = worst parameter across all three.
   const hasCritical =
     phStatus === "Critical" ||
+    temperatureStatus === "Critical" ||
     turbidityStatus === "Critical";
 
 
   const hasWarning =
+    phStatus === "Warning" ||
     temperatureStatus === "Warning" ||
     turbidityStatus === "Warning";
 
@@ -444,9 +572,79 @@ const saveReading = async () => {
 
   const chartRecords = useMemo(() => {
 
-    return history.slice(-12);
+    return history.slice(-50);
 
   }, [history]);
+
+
+  // =========================================
+  // PER-PARAMETER CHART SCALES
+  // (Trends-style: each parameter gets its
+  // own data-driven range, anchored on its
+  // board Normal band, instead of one shared
+  // or fixed range for all three.)
+  // =========================================
+
+  const chartScale = (
+    values,
+    normalMin,
+    normalMax,
+    pad
+  ) => {
+
+    const finite = values.filter((value) =>
+      Number.isFinite(value)
+    );
+
+    if (finite.length === 0) {
+      return {
+        min: normalMin,
+        max: normalMax,
+      };
+    }
+
+    const min = Math.floor(
+      Math.min(...finite, normalMin) - pad
+    );
+
+    const max = Math.ceil(
+      Math.max(...finite, normalMax) + pad
+    );
+
+    return {
+      min,
+      max: max === min ? max + 1 : max,
+    };
+
+  };
+
+
+  const phChartScale = chartScale(
+    chartRecords.map((record) => record.ph),
+    6.5,
+    7.5,
+    0.5
+  );
+
+
+  const temperatureChartScale = chartScale(
+    chartRecords.map(
+      (record) => record.temperature
+    ),
+    20,
+    40,
+    2
+  );
+
+
+  const turbidityChartScale = chartScale(
+    chartRecords.map(
+      (record) => record.turbidity
+    ),
+    0,
+    2,
+    0.5
+  );
 
 
   // =========================================
@@ -485,67 +683,85 @@ const saveReading = async () => {
   // BUILD CHART POINTS
   // =========================================
 
-const buildChartPoints = (
-  values,
-  min,
-  max
-) => {
-  if (values.length === 0) {
-    return "";
-  }
+  const buildChartPoints = (
+    values,
+    min,
+    max
+  ) => {
 
-  const width = 600;
-  const height = 200;
-  const padding = 8;
+    if (values.length === 0) {
+      return "";
+    }
 
-  return values
-    .map((value, index) => {
-      const x =
-        values.length === 1
-          ? width / 2
-          : (index / (values.length - 1)) * width;
 
-      const numericValue = Number(value);
+    const width = 600;
+    const height = 200;
 
-      // Keep missing or invalid readings from breaking the chart.
-      if (!Number.isFinite(numericValue)) {
-        return null;
-      }
 
-      // Convert this parameter's value to its own 0–1 scale.
-      const normalised = Math.max(
-        0,
-        Math.min(1, (numericValue - min) / (max - min))
-      );
+    return values
+      .map((value, index) => {
 
-      const y =
-        height -
-        padding -
-        normalised * (height - padding * 2);
+        const x =
+          values.length === 1
+            ? width / 2
+            : (index /
+                (values.length - 1)) *
+              width;
 
-      return `${x},${y}`;
-    })
-    .filter((point) => point !== null)
-    .join(" ");
-};
 
-const phChartPoints = buildChartPoints(
-  chartRecords.map((record) => record.ph),
-  0,
-  14
-);
+        const normalised =
+          normaliseValue(
+            value,
+            min,
+            max
+          );
 
-const temperatureChartPoints = buildChartPoints(
-  chartRecords.map((record) => record.temperature),
-  15,
-  35
-);
 
-const turbidityChartPoints = buildChartPoints(
-  chartRecords.map((record) => record.turbidity),
-  0,
-  10
-);
+        const y =
+          height -
+          (normalised / 10) *
+            height;
+
+
+        return `${x},${y}`;
+
+      })
+      .join(" ");
+
+  };
+
+
+  const phChartPoints =
+    buildChartPoints(
+      chartRecords.map(
+        (record) => record.ph
+      ),
+      phChartScale.min,
+      phChartScale.max
+    );
+
+
+  const temperatureChartPoints =
+    buildChartPoints(
+      chartRecords.map(
+        (record) =>
+          record.temperature
+      ),
+      temperatureChartScale.min,
+      temperatureChartScale.max
+    );
+
+
+  const turbidityChartPoints =
+    buildChartPoints(
+      chartRecords.map(
+        (record) =>
+          record.turbidity
+      ),
+      turbidityChartScale.min,
+      turbidityChartScale.max
+    );
+
 
   // =========================================
   // CHART TIME LABELS
@@ -591,7 +807,7 @@ const turbidityChartPoints = buildChartPoints(
       unit: "pH",
       icon: "pH",
       status: phStatus,
-      range: "Reference: 6.5 – 8.5",
+      range: "Reference: 6.5 – 7.5",
       color: "#2787e8",
       progress:
         readings.ph === 0
@@ -617,7 +833,7 @@ const turbidityChartPoints = buildChartPoints(
       status:
         temperatureStatus,
       range:
-        "Operating range: 20 – 28 °C",
+        "Operating range: 20 – 40 °C",
       color: "#e8a23b",
       progress:
         readings.temperature === 0
@@ -643,7 +859,7 @@ const turbidityChartPoints = buildChartPoints(
       status:
         turbidityStatus,
       range:
-        "Normal: ≤ 1.50 NTU",
+        "Normal: 0 – 2 NTU",
       color: "#17b89b",
       progress:
         readings.turbidity === 0
@@ -695,17 +911,42 @@ const turbidityChartPoints = buildChartPoints(
   // =========================================
   // LANDING PAGE
   // =========================================
-if (showLanding) {
-  return <LandingPage onGetStarted={() => setShowLanding(false)} />;
-}
 
-if (authLoading) {
-  return <div className="loading-screen">Checking authentication...</div>;
-}
+  if (showLogin) {
+    return (
+      <LoginPage
+        onBack={() => {
+          setShowLogin(false);
+          // Back to the dashboard as a visitor if already viewing it,
+          // otherwise back to the landing page.
+          if (!accessRole) {
+            setShowLanding(true);
+          }
+        }}
+        onLoggedIn={(user) => {
+          setOperatorUser(user);
+          setAccessRole("operator");
+          setShowLogin(false);
+          setShowLanding(false);
+        }}
+      />
+    );
+  }
 
-if (!currentUser) {
-  return <LoginPage />;
-}
+  if (showLanding) {
+
+    return (
+      <LandingPage
+        onGetStarted={() => {
+          setAccessRole("visitor");
+          setShowLanding(false);
+        }}
+        onOperatorLogin={() => setShowLogin(true)}
+      />
+    );
+
+  }
+
 
   // =========================================
   // MAIN APPLICATION
@@ -842,35 +1083,50 @@ if (!currentUser) {
           <div className="topbar-right">
 
 
-{/* OPERATOR */}
+            {/* OPERATOR */}
 
-<div className="operator-block">
+            <div className="operator-block">
 
-  <div className="avatar">
-    {currentUser?.email?.charAt(0).toUpperCase() || "OP"}
-  </div>
+              <div className="avatar">
+                {accessRole === "operator" ? "OP" : "V"}
+              </div>
 
-  <div className="operator">
 
-    <strong>
-      {currentUser?.email || "Operator"}
-    </strong>
+              <div className="operator">
 
-    <small>
-      Plant Operator
-    </small>
+                <strong>
+                  {accessRole === "operator"
+                    ? "Operator"
+                    : "Visitor"}
+                </strong>
 
-  </div>
+                <small>
+                  {accessRole === "operator"
+                    ? operatorUser?.email || "Plant Operator"
+                    : "Read-only view"}
+                </small>
 
-  <button
-    type="button"
-    onClick={handleLogout}
-    className="logout-button"
-  >
-    Logout
-  </button>
+              </div>
 
-</div>
+              {accessRole === "operator" ? (
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  style={{ marginLeft: "12px", cursor: "pointer" }}
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowLogin(true)}
+                  style={{ marginLeft: "12px", cursor: "pointer" }}
+                >
+                  Operator Login
+                </button>
+              )}
+
+            </div>
 
 
             <div className="header-divider" />
@@ -927,8 +1183,7 @@ if (!currentUser) {
 
               {/* SYSTEM STATUS */}
 
-
-<div className={`system-online ${systemStatus.className}`}>
+              <div className="system-online">
 
                 <div className="system-online-icon">
 
@@ -949,6 +1204,24 @@ if (!currentUser) {
 
                   <small>
                     {systemStatus.description}
+                  </small>
+
+                  <small>
+                    {lastUpdate
+                      ? `Last updated: ${lastUpdate.toLocaleTimeString(
+                          "en-GB",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          }
+                        )} · ${
+                          currentTime - lastUpdate <=
+                          60000
+                            ? "● Live"
+                            : "○ Offline"
+                        }`
+                      : "Last updated: Waiting for data"}
                   </small>
 
                 </div>
@@ -985,12 +1258,9 @@ if (!currentUser) {
                       </div>
 
 
-
-<span
-  className={`status-badge ${item.status.toLowerCase()}`}
->
-  {item.status}
-</span>
+                      <span className="status-badge">
+                        {item.status}
+                      </span>
 
                     </div>
 
@@ -1100,13 +1370,16 @@ if (!currentUser) {
 
                   <div className="chart">
 
-<div className="y-labels">
-  <span>
-    Relative
-    <br />
-    scale
-  </span>
-</div>
+                    <div className="y-labels">
+
+                      <span>10</span>
+                      <span>8</span>
+                      <span>6</span>
+                      <span>4</span>
+                      <span>2</span>
+                      <span>0</span>
+
+                    </div>
 
 
                     <div className="plot">
@@ -1256,7 +1529,12 @@ if (!currentUser) {
 
 
                 <p className="chart-note">
-                Recent pH, temperature, and turbidity readings, plotted on independent scales.
+                  The chart uses the latest
+                  recorded measurements from
+                  the connected monitoring
+                  system. Detailed analysis is
+                  available under Trends &amp;
+                  Analysis.
                 </p>
 
               </article>
@@ -1448,7 +1726,7 @@ if (!currentUser) {
                 </div>
 
 
-                <span className={`status-badge ${overallStatus.toLowerCase()}`}>
+                <span className="status-badge">
                   {overallStatus}
                 </span>
 

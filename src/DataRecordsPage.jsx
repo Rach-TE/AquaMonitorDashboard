@@ -39,27 +39,37 @@ function DataRecordsPage() {
         }
 
         const loadedRecords = Object.entries(data)
-  .map(([id, value]) => ({
-    id,
-    ph: Number(value?.pH ?? 0),
-    temperature: Number(value?.temp ?? 0),
-    turbidity: Number(value?.turbidity ?? 0),
-    timestamp: Number(value?.timestamp ?? 0),
-  }))
-  .filter(
-    (record) =>
-      record.timestamp > 0 &&
-      Number.isFinite(record.ph) &&
-      Number.isFinite(record.temperature) &&
-      Number.isFinite(record.turbidity)
-  )
-  .sort(
-    (a, b) => b.timestamp - a.timestamp
-  );
+          .map(([id, value]) => ({
+            id,
+            ph: Number(
+              value?.ph ?? value?.pH ?? 0
+            ),
+            temperature: Number(
+              value?.temperature ??
+                value?.temp ??
+                0
+            ),
+            turbidity: Number(
+              value?.turbidity ?? 0
+            ),
+            timestamp: Number(
+              value?.timestamp ?? 0
+            ),
+          }))
+          .filter(
+            (record) =>
+              record.timestamp > 0 &&
+              Number.isFinite(record.ph) &&
+              Number.isFinite(record.temperature) &&
+              Number.isFinite(record.turbidity)
+          )
+          .sort(
+            (a, b) =>
+              b.timestamp - a.timestamp
+          );
 
-setRecords(loadedRecords);
-setLoading(false);
-
+        setRecords(loadedRecords);
+        setLoading(false);
       },
       (error) => {
         console.error(
@@ -96,26 +106,37 @@ setLoading(false);
       return "Waiting";
     }
 
+    // Board 3-level bands, worst first.
     // pH
-    if (ph < 6.5 || ph > 8.5) {
-      return "Critical";
-    }
-
-    // Turbidity
-    if (turbidity >= 5) {
+    if (ph < 5.0 || ph > 9.0) {
       return "Critical";
     }
 
     // Temperature
+    if (temperature < 10 || temperature > 50) {
+      return "Critical";
+    }
+
+    // Turbidity
+    if (turbidity > 5) {
+      return "Critical";
+    }
+
+    // pH warning range
+    if (ph < 6.5 || ph > 7.5) {
+      return "Warning";
+    }
+
+    // Temperature warning range
     if (
       temperature < 20 ||
-      temperature > 28
+      temperature > 40
     ) {
       return "Warning";
     }
 
     // Turbidity warning range
-    if (turbidity > 1.5) {
+    if (turbidity > 2) {
       return "Warning";
     }
 
@@ -176,22 +197,19 @@ setLoading(false);
         return false;
       }
 
-      // Inclusive date-range filter using the operator's local dates.
-      const recordDate = new Date(record.timestamp);
-      const recordDay = new Date(
-        recordDate.getFullYear(),
-        recordDate.getMonth(),
-        recordDate.getDate()
-      ).getTime();
+      // Date range filter: start date to end date (inclusive)
+      const recordDate = new Date(
+        record.timestamp
+      )
+        .toISOString()
+        .split("T")[0];
 
-      if (startDate) {
-        const rangeStart = new Date(`${startDate}T00:00:00`).getTime();
-        if (recordDay < rangeStart) return false;
+      if (startDate && recordDate < startDate) {
+        return false;
       }
 
-      if (endDate) {
-        const rangeEnd = new Date(`${endDate}T00:00:00`).getTime();
-        if (recordDay > rangeEnd) return false;
+      if (endDate && recordDate > endDate) {
+        return false;
       }
 
       // Search
@@ -258,69 +276,6 @@ setLoading(false);
       ? records[0]
       : null;
 
-// =========================================
-// EXPORT RECORDS TO CSV
-// =========================================
-
-const exportRecordsToCSV = (exportAll = false) => {
-  const recordsToExport = exportAll ? records : filteredRecords;
-
-  if (!exportAll && startDate && endDate && startDate > endDate) {
-    alert("The start date cannot be later than the end date.");
-    return;
-  }
-
-  if (recordsToExport.length === 0) {
-    alert(exportAll
-      ? "There are no records to export."
-      : "There are no records matching the selected filters.");
-    return;
-  }
-
-  const headers = [
-    "Timestamp", "Date", "Time", "pH",
-    "Temperature (°C)", "Turbidity (NTU)", "Status",
-  ];
-
-  const escapeCSV = (value) => {
-    const text = String(value ?? "");
-    return `"${text.replace(/"/g, '""')}"`;
-  };
-
-  const rows = recordsToExport.map((record) => [
-    new Date(record.timestamp).toISOString(),
-    formatDate(record.timestamp),
-    formatTime(record.timestamp),
-    record.ph,
-    record.temperature,
-    record.turbidity,
-    getRecordStatus(record),
-  ]);
-
-  const csvContent = [
-    headers.map(escapeCSV).join(","),
-    ...rows.map((row) => row.map(escapeCSV).join(",")),
-  ].join("\\r\\n");
-
-  const blob = new Blob(["\\uFEFF", csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const exportLabel = exportAll ? "All_Records" : "Filtered_Records";
-
-  link.href = url;
-  link.download = `AquaMonitor_${exportLabel}_${new Date()
-    .toISOString()
-    .slice(0, 10)}.csv`;
-
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-};
-
   // =========================================
   // CLEAR FILTERS
   // =========================================
@@ -330,6 +285,62 @@ const exportRecordsToCSV = (exportAll = false) => {
     setStartDate("");
     setEndDate("");
     setStatusFilter("All Statuses");
+  };
+
+  // =========================================
+  // EXPORT FILTERED RECORDS AS CSV
+  // Exports exactly what the table shows:
+  // the current date-range, status and
+  // search filters, most recent first.
+  // No data is changed, nothing is uploaded.
+  // =========================================
+
+  const exportCsv = () => {
+    if (filteredRecords.length === 0) {
+      return;
+    }
+
+    const header = [
+      "Date",
+      "Time",
+      "pH",
+      "Temperature (C)",
+      "Turbidity (NTU)",
+      "Status",
+    ];
+
+    const rows = filteredRecords.map((record) => [
+      formatDate(record.timestamp),
+      formatTime(record.timestamp),
+      record.ph.toFixed(1),
+      record.temperature.toFixed(1),
+      record.turbidity.toFixed(1),
+      getRecordStatus(record),
+    ]);
+
+    const csv = [header, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
+
+    // BOM so spreadsheet apps open special
+    // characters correctly.
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const range =
+      startDate || endDate
+        ? `${startDate || "start"}-to-${endDate || "end"}`
+        : "all";
+
+    link.href = url;
+    link.download = `aquamonitor-records-${range}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   // =========================================
@@ -441,7 +452,7 @@ const exportRecordsToCSV = (exportAll = false) => {
             </h3>
 
             <p>
-              Narrow the records by date, status,
+              Narrow the records by date range, status,
               or search term.
             </p>
           </div>
@@ -458,22 +469,35 @@ const exportRecordsToCSV = (exportAll = false) => {
         <div className="records-filters">
 
           <div className="record-filter-field">
-            <label>START DATE</label>
+            <label>
+              START DATE
+            </label>
+
             <input
               type="date"
               value={startDate}
-              max={endDate || undefined}
-              onChange={(event) => setStartDate(event.target.value)}
+              onChange={(event) =>
+                setStartDate(
+                  event.target.value
+                )
+              }
             />
           </div>
 
           <div className="record-filter-field">
-            <label>END DATE</label>
+            <label>
+              END DATE
+            </label>
+
             <input
               type="date"
               value={endDate}
               min={startDate || undefined}
-              onChange={(event) => setEndDate(event.target.value)}
+              onChange={(event) =>
+                setEndDate(
+                  event.target.value
+                )
+              }
             />
           </div>
 
@@ -544,35 +568,34 @@ const exportRecordsToCSV = (exportAll = false) => {
 
       <section className="records-panel">
 
-<div className="records-panel-header">
-  <div>
-    <h3>Recorded Measurements</h3>
+        <div className="records-panel-header">
+          <div>
+            <h3>
+              Recorded Measurements
+            </h3>
 
-    <p>
-      {filteredRecords.length.toLocaleString()}{" "}
-      record
-      {filteredRecords.length === 1 ? "" : "s"} displayed
-    </p>
-  </div>
+            <p>
+              {filteredRecords.length.toLocaleString()}{" "}
+              record
+              {filteredRecords.length === 1
+                ? ""
+                : "s"}{" "}
+              displayed
+            </p>
+          </div>
 
-  <button
-     type="button"
-     className="export-records-button"
-     onClick={() => exportRecordsToCSV(false)}
-     disabled={loading || filteredRecords.length === 0}
-   >
-     ↓ Export Filtered
-   </button>
+          <button
+            type="button"
+            className="export-csv"
+            onClick={exportCsv}
+            disabled={
+              loading || filteredRecords.length === 0
+            }
+          >
+            Export CSV
+          </button>
+        </div>
 
-   <button
-     type="button"
-     className="export-records-button"
-     onClick={() => exportRecordsToCSV(true)}
-     disabled={loading || records.length === 0}
-   >
-     ↓ Export All
-   </button>
-</div>
         <div className="records-table-wrapper">
 
           <table className="records-table">

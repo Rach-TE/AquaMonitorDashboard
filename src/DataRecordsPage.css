@@ -279,6 +279,28 @@
   color: #2787e8;
 }
 
+.export-csv {
+  padding: 8px 13px;
+  border: 1px solid #2787e8;
+  border-radius: 8px;
+  background: #2787e8;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.export-csv:hover:not(:disabled) {
+  background: #1f74c9;
+  border-color: #1f74c9;
+}
+
+.export-csv:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /* =========================================
    DATA TABLE
@@ -640,42 +662,4 @@ body[data-theme="dark"] .records-info-panel {
     padding: 20px;
   }
 
-}
-
-.export-records-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  padding: 10px 15px;
-  border: 1px solid #cfe3f7;
-  border-radius: 9px;
-
-  background: #eaf4ff;
-  color: #176fc5;
-
-  font: inherit;
-  font-size: 12px;
-  font-weight: 650;
-
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.2s ease;
-}
-
-.export-records-button:hover:not(:disabled) {
-  background: #dceeff;
-}
-
-.export-records-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.records-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
 }

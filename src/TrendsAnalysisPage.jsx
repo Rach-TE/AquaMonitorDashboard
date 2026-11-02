@@ -27,24 +27,24 @@ function TrendsAnalysisPage() {
           return;
         }
 
-       
-const loadedRecords = Object.entries(data)
-  .map(([id, value]) => ({
-    id,
-    ph: value?.pH == null ? NaN : Number(value.pH),
-    temperature: value?.temp == null ? NaN : Number(value.temp),
-    turbidity:
-      value?.turbidity == null ? NaN : Number(value.turbidity),
-    timestamp: Number(value?.timestamp),
-  }))
-  .filter(
-    (record) =>
-      record.timestamp > 0 &&
-      Number.isFinite(record.ph) &&
-      Number.isFinite(record.temperature) &&
-      Number.isFinite(record.turbidity)
-  )
-  .sort((a, b) => a.timestamp - b.timestamp);
+        const loadedRecords = Object.entries(data)
+          .map(([id, value]) => ({
+            id,
+            ph: Number(value?.ph ?? value?.pH ?? 0),
+            temperature: Number(
+              value?.temperature ?? value?.temp ?? 0
+            ),
+            turbidity: Number(value?.turbidity ?? 0),
+            timestamp: Number(value?.timestamp ?? 0),
+          }))
+          .filter(
+            (record) =>
+              record.timestamp > 0 &&
+              Number.isFinite(record.ph) &&
+              Number.isFinite(record.temperature) &&
+              Number.isFinite(record.turbidity)
+          )
+          .sort((a, b) => a.timestamp - b.timestamp);
 
         setRecords(loadedRecords);
         setLoading(false);
@@ -84,6 +84,63 @@ const loadedRecords = Object.entries(data)
   }, [records, period]);
 
   // =========================================
+  // VALIDITY FILTER - impossible / sentinel
+  // readings are dropped BEFORE any stats,
+  // counts or chart points are computed, per
+  // parameter, so one bad sensor value does
+  // not delete the good values in the same
+  // record. The monitoring BANDS are not the
+  // filter: a genuine Critical reading (for
+  // example temperature 56.8 C) still shows.
+  // Dropped: pH outside 0-14, temperature
+  // -999 (the board's missing-sensor value),
+  // temperature at/below 0, negative
+  // turbidity, and 0 where the app already
+  // treats 0 as "no reading" (pH, temperature).
+  // =========================================
+
+  const isValidReading = (parameter, value) => {
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+
+    if (parameter === "ph") {
+      return value > 0 && value <= 14;
+    }
+
+    if (parameter === "temperature") {
+      return value > 0 && value < 125 && value !== -999;
+    }
+
+    if (parameter === "turbidity") {
+      return value >= 0 && value <= 1000;
+    }
+
+    return false;
+  };
+
+  const excludedReadings = useMemo(() => {
+    let excluded = 0;
+
+    filteredRecords.forEach((record) => {
+      ["ph", "temperature", "turbidity"].forEach(
+        (parameter) => {
+          if (
+            !isValidReading(
+              parameter,
+              Number(record[parameter])
+            )
+          ) {
+            excluded += 1;
+          }
+        }
+      );
+    });
+
+    return excluded;
+  }, [filteredRecords]);
+
+  // =========================================
   // CALCULATE STATISTICS
   // =========================================
 
@@ -98,7 +155,7 @@ const loadedRecords = Object.entries(data)
 
     const values = filteredRecords
       .map((record) => Number(record[parameter]))
-      .filter((value) => Number.isFinite(value));
+      .filter((value) => isValidReading(parameter, value));
 
     if (values.length === 0) {
       return {
@@ -135,24 +192,37 @@ const loadedRecords = Object.entries(data)
 
     const numericValue = Number(value);
 
+    // Board 3-level bands (same as App / Real-time / Alerts)
     if (parameter === "ph") {
-      return numericValue >= 6.5 && numericValue <= 8.5
-        ? "Normal"
-        : "Critical";
-    }
-
-    if (parameter === "temperature") {
-      return numericValue >= 20 && numericValue <= 28
-        ? "Normal"
-        : "Warning";
-    }
-
-    if (parameter === "turbidity") {
-      if (numericValue >= 5) {
+      if (numericValue < 5.0 || numericValue > 9.0) {
         return "Critical";
       }
 
-      if (numericValue > 1.5) {
+      if (numericValue < 6.5 || numericValue > 7.5) {
+        return "Warning";
+      }
+
+      return "Normal";
+    }
+
+    if (parameter === "temperature") {
+      if (numericValue < 10 || numericValue > 50) {
+        return "Critical";
+      }
+
+      if (numericValue < 20 || numericValue > 40) {
+        return "Warning";
+      }
+
+      return "Normal";
+    }
+
+    if (parameter === "turbidity") {
+      if (numericValue > 5) {
+        return "Critical";
+      }
+
+      if (numericValue > 2) {
         return "Warning";
       }
 
@@ -169,6 +239,15 @@ const loadedRecords = Object.entries(data)
 
     filteredRecords.forEach((record) => {
       ["ph", "temperature", "turbidity"].forEach((parameter) => {
+        if (
+          !isValidReading(
+            parameter,
+            Number(record[parameter])
+          )
+        ) {
+          return;
+        }
+
         const status = getStatus(
           parameter,
           Number(record[parameter])
@@ -224,7 +303,11 @@ const loadedRecords = Object.entries(data)
     minimum,
     maximum
   ) => {
-    if (filteredRecords.length === 0) {
+    const validRecords = filteredRecords.filter((record) =>
+      isValidReading(parameter, Number(record[parameter]))
+    );
+
+    if (validRecords.length === 0) {
       return "";
     }
 
@@ -237,30 +320,29 @@ const loadedRecords = Object.entries(data)
         ? 1
         : maximum - minimum;
 
-    return filteredRecords
+    return validRecords
       .map((record, index) => {
         const value = Number(record[parameter]);
 
         const x =
-          filteredRecords.length === 1
+          validRecords.length === 1
             ? width / 2
             : (index /
-                (filteredRecords.length - 1)) *
+                (validRecords.length - 1)) *
               width;
 
-      const normalized =
-  (value - minimum) / range;
+        // Clamp as a safety net: no point may ever
+        // leave the chart area, whatever slips in.
+        const normalized = Math.min(
+          1,
+          Math.max(0, (value - minimum) / range)
+        );
 
-const clampedNormalized = Math.max(
-  0,
-  Math.min(1, normalized)
-);
-
-const y =
-  height -
-  padding -
-  clampedNormalized *
-    (height - padding * 2);
+        const y =
+          height -
+          padding -
+          normalized *
+            (height - padding * 2);
 
         return `${x},${y}`;
       })
@@ -271,16 +353,16 @@ const y =
   // CHART RANGES
   // =========================================
 
-  const phChartMin = 5;
+  const phChartMin = 0;
   const phChartMax = 14;
 
-  const temperatureValues = filteredRecords.map(
-    (record) => record.temperature
-  );
+  const temperatureValues = filteredRecords
+    .map((record) => record.temperature)
+    .filter((value) => isValidReading("temperature", value));
 
-  const turbidityValues = filteredRecords.map(
-    (record) => record.turbidity
-  );
+  const turbidityValues = filteredRecords
+    .map((record) => record.turbidity)
+    .filter((value) => isValidReading("turbidity", value));
 
   const temperatureMin =
     temperatureValues.length > 0
@@ -474,6 +556,9 @@ const y =
 
             <small>
               {periodLabel}
+              {excludedReadings > 0
+                ? ` - ${excludedReadings.toLocaleString()} invalid readings excluded`
+                : ""}
             </small>
           </div>
         </article>
@@ -493,7 +578,7 @@ const y =
             </strong>
 
             <small>
-              Normal range: 6.5 – 8.5
+              Normal range: 6.5 – 7.5
             </small>
           </div>
         </article>
@@ -516,7 +601,7 @@ const y =
             </strong>
 
             <small>
-              Operating range: 20 – 28 °C
+              Operating range: 20 – 40 °C
             </small>
           </div>
         </article>
@@ -539,7 +624,7 @@ const y =
             </strong>
 
             <small>
-              Normal: ≤ 1.50 NTU
+              Normal: 0 – 2 NTU
             </small>
           </div>
         </article>
@@ -661,12 +746,14 @@ const y =
 
             <div className="trend-chart">
               <div className="trend-y-labels">
+                <span>14</span>
+                <span>12</span>
                 <span>10</span>
-                <span>9</span>
                 <span>8</span>
-                <span>7</span>
                 <span>6</span>
-                <span>5</span>
+                <span>4</span>
+                <span>2</span>
+                <span>0</span>
               </div>
 
               <div className="trend-plot">
@@ -680,7 +767,6 @@ const y =
                   viewBox="0 0 700 220"
                   preserveAspectRatio="none"
                   className="trend-svg"
-                  style={{ overflow: "hidden" }}
                 >
                   <polyline
                     points={createPoints(
@@ -762,35 +848,37 @@ const y =
 
             <div className="trend-chart">
               <div className="trend-y-labels">
-               
-<span>{temperatureMax}</span>
+                <span>{temperatureMax}</span>
 
-<span>
-  {Math.round(
-    temperatureMax - (temperatureMax - temperatureMin) * 0.2
-  )}
-</span>
+                <span>
+                  {Math.round(
+                    temperatureMax -
+                      (temperatureMax - temperatureMin) * 0.2
+                  )}
+                </span>
 
-<span>
-  {Math.round(
-    temperatureMax - (temperatureMax - temperatureMin) * 0.4
-  )}
-</span>
+                <span>
+                  {Math.round(
+                    temperatureMax -
+                      (temperatureMax - temperatureMin) * 0.4
+                  )}
+                </span>
 
-<span>
-  {Math.round(
-    temperatureMax - (temperatureMax - temperatureMin) * 0.6
-  )}
-</span>
+                <span>
+                  {Math.round(
+                    temperatureMax -
+                      (temperatureMax - temperatureMin) * 0.6
+                  )}
+                </span>
 
-<span>
-  {Math.round(
-    temperatureMax - (temperatureMax - temperatureMin) * 0.8
-  )}
-</span>
+                <span>
+                  {Math.round(
+                    temperatureMax -
+                      (temperatureMax - temperatureMin) * 0.8
+                  )}
+                </span>
 
-<span>{temperatureMin}</span>
-
+                <span>{temperatureMin}</span>
               </div>
 
               <div className="trend-plot">

@@ -7,13 +7,18 @@ function AlertsPage({ readings }) {
   // CURRENT WATER-QUALITY LIMITS
   // =========================================
 
-  const PH_MIN = 6.5;
-  const PH_MAX = 8.5;
+  // Board 3-level bands
+  const PH_NORMAL_MIN = 6.5;
+  const PH_NORMAL_MAX = 7.5;
+  const PH_WARNING_MIN = 5.0;
+  const PH_WARNING_MAX = 9.0;
 
-  const TEMPERATURE_MIN = 20;
-  const TEMPERATURE_MAX = 28;
+  const TEMPERATURE_NORMAL_MIN = 20;
+  const TEMPERATURE_NORMAL_MAX = 40;
+  const TEMPERATURE_WARNING_MIN = 10;
+  const TEMPERATURE_WARNING_MAX = 50;
 
-  const TURBIDITY_WARNING = 1.5;
+  const TURBIDITY_NORMAL_MAX = 2;
   const TURBIDITY_CRITICAL = 5.0;
 
 
@@ -37,32 +42,52 @@ function AlertsPage({ readings }) {
   const phCritical =
     hasReading &&
     (
-      readings.ph < PH_MIN ||
-      readings.ph > PH_MAX
+      readings.ph < PH_WARNING_MIN ||
+      readings.ph > PH_WARNING_MAX
+    );
+
+
+  const phWarning =
+    hasReading &&
+    !phCritical &&
+    (
+      readings.ph < PH_NORMAL_MIN ||
+      readings.ph > PH_NORMAL_MAX
+    );
+
+
+  const temperatureCritical =
+    hasReading &&
+    (
+      readings.temperature <
+        TEMPERATURE_WARNING_MIN ||
+      readings.temperature >
+        TEMPERATURE_WARNING_MAX
     );
 
 
   const temperatureWarning =
     hasReading &&
+    !temperatureCritical &&
     (
       readings.temperature <
-        TEMPERATURE_MIN ||
+        TEMPERATURE_NORMAL_MIN ||
       readings.temperature >
-        TEMPERATURE_MAX
+        TEMPERATURE_NORMAL_MAX
     );
 
 
   const turbidityCritical =
     hasReading &&
-    readings.turbidity >=
+    readings.turbidity >
       TURBIDITY_CRITICAL;
 
 
   const turbidityWarning =
     hasReading &&
     readings.turbidity >
-      TURBIDITY_WARNING &&
-    readings.turbidity <
+      TURBIDITY_NORMAL_MAX &&
+    readings.turbidity <=
       TURBIDITY_CRITICAL;
 
 
@@ -81,16 +106,16 @@ function AlertsPage({ readings }) {
       id: "ph-alert",
       severity: "critical",
       title:
-        readings.ph < PH_MIN
+        readings.ph < PH_WARNING_MIN
           ? "Low pH Level"
           : "High pH Level",
       parameter: "pH",
       value: readings.ph.toFixed(1),
-      limit: `${PH_MIN} – ${PH_MAX}`,
+      limit: `< ${PH_WARNING_MIN} or > ${PH_WARNING_MAX}`,
       description:
-        readings.ph < PH_MIN
-          ? "The current pH level is below the acceptable reference range."
-          : "The current pH level is above the acceptable reference range.",
+        readings.ph < PH_WARNING_MIN
+          ? "The current pH level is below the critical range."
+          : "The current pH level is above the critical range.",
       response:
         "Check the treatment process and investigate the cause of the pH deviation.",
     });
@@ -98,25 +123,78 @@ function AlertsPage({ readings }) {
   }
 
 
-  // Temperature alert
+  // pH warning alert
 
-  if (temperatureWarning) {
+  if (phWarning) {
+
+    activeAlerts.push({
+      id: "ph-warning-alert",
+      severity: "warning",
+      title:
+        readings.ph < PH_NORMAL_MIN
+          ? "Low pH Level"
+          : "High pH Level",
+      parameter: "pH",
+      value: readings.ph.toFixed(1),
+      limit: `${PH_NORMAL_MIN} – ${PH_NORMAL_MAX}`,
+      description:
+        readings.ph < PH_NORMAL_MIN
+          ? "The current pH level is below the normal range."
+          : "The current pH level is above the normal range.",
+      response:
+        "Monitor the pH level and check the treatment process if the condition persists.",
+    });
+
+  }
+
+
+  // Temperature critical alert
+
+  if (temperatureCritical) {
+
+    activeAlerts.push({
+      id: "temperature-critical-alert",
+      severity: "critical",
+      title:
+        readings.temperature <
+        TEMPERATURE_WARNING_MIN
+          ? "Low Water Temperature"
+          : "High Water Temperature",
+      parameter: "Temperature",
+      value:
+        readings.temperature.toFixed(1),
+      limit: `< ${TEMPERATURE_WARNING_MIN} or > ${TEMPERATURE_WARNING_MAX} °C`,
+      description:
+        readings.temperature <
+        TEMPERATURE_WARNING_MIN
+          ? "The current water temperature is below the critical range."
+          : "The current water temperature is above the critical range.",
+      response:
+        "Check the water temperature and the treatment process immediately.",
+    });
+
+  }
+
+
+  // Temperature warning alert
+
+  else if (temperatureWarning) {
 
     activeAlerts.push({
       id: "temperature-alert",
       severity: "warning",
       title:
         readings.temperature <
-        TEMPERATURE_MIN
+        TEMPERATURE_NORMAL_MIN
           ? "Low Water Temperature"
           : "High Water Temperature",
       parameter: "Temperature",
       value:
         readings.temperature.toFixed(1),
-      limit: `${TEMPERATURE_MIN} – ${TEMPERATURE_MAX} °C`,
+      limit: `${TEMPERATURE_NORMAL_MIN} – ${TEMPERATURE_NORMAL_MAX} °C`,
       description:
         readings.temperature <
-        TEMPERATURE_MIN
+        TEMPERATURE_NORMAL_MIN
           ? "The current water temperature is below the normal operating range."
           : "The current water temperature is above the normal operating range.",
       response:
@@ -159,7 +237,7 @@ function AlertsPage({ readings }) {
       value:
         readings.turbidity.toFixed(1),
       limit:
-        `≤ ${TURBIDITY_WARNING.toFixed(1)} NTU`,
+        `Normal: 0 – ${TURBIDITY_NORMAL_MAX} NTU`,
       description:
         "The current turbidity level is above the normal range and requires monitoring.",
       response:
@@ -239,15 +317,24 @@ function AlertsPage({ readings }) {
 
     if (parameter === "pH") {
 
-      return phCritical
-        ? {
-            status: "Attention",
-            type: "critical",
-          }
-        : {
-            status: "Within Range",
-            type: "online",
-          };
+      if (phCritical) {
+        return {
+          status: "Attention",
+          type: "critical",
+        };
+      }
+
+      if (phWarning) {
+        return {
+          status: "Attention",
+          type: "warning",
+        };
+      }
+
+      return {
+        status: "Within Range",
+        type: "online",
+      };
 
     }
 
@@ -257,15 +344,24 @@ function AlertsPage({ readings }) {
       "Temperature"
     ) {
 
-      return temperatureWarning
-        ? {
-            status: "Attention",
-            type: "warning",
-          }
-        : {
-            status: "Within Range",
-            type: "online",
-          };
+      if (temperatureCritical) {
+        return {
+          status: "Attention",
+          type: "critical",
+        };
+      }
+
+      if (temperatureWarning) {
+        return {
+          status: "Attention",
+          type: "warning",
+        };
+      }
+
+      return {
+        status: "Within Range",
+        type: "online",
+      };
 
     }
 

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCSHOLNWq42erfPMVngTGx_wBxeInyn96M",
@@ -17,3 +17,7 @@ const app = initializeApp(firebaseConfig);
 
 export const database = getDatabase(app);
 export const auth = getAuth(app);
+// Stay signed in on refresh (local persistence). If sign-in has not
+// been enabled in the Firebase project yet, login will fail with a
+// friendly message in LoginPage — enabling it is a console step.
+setPersistence(auth, browserLocalPersistence).catch(() => {});

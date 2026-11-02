@@ -4,7 +4,7 @@ function SettingsPage({ theme, setTheme }) {
   const monitoringLimits = [
     {
       name: "pH",
-      range: "6.5 – 8.5",
+      range: "6.5 – 7.5",
       unit: "pH",
       description: "Acceptable operating range",
       icon: "≈",
@@ -12,7 +12,7 @@ function SettingsPage({ theme, setTheme }) {
     },
     {
       name: "Temperature",
-      range: "20 – 28",
+      range: "20 – 40",
       unit: "°C",
       description: "Acceptable operating range",
       icon: "°",
@@ -20,7 +20,7 @@ function SettingsPage({ theme, setTheme }) {
     },
     {
       name: "Turbidity",
-      range: "≤ 1.50",
+      range: "0 – 2",
       unit: "NTU",
       description: "Normal operating level",
       icon: "≈",
@@ -83,9 +83,11 @@ function SettingsPage({ theme, setTheme }) {
         <div className="settings-reference-note">
           <strong>Monitoring reference</strong>
           <span>
-            pH values outside 6.5–8.5 are critical. Temperature outside
-            20–28 °C requires attention. Turbidity above 1.50 NTU requires
-            attention, while values of 5.00 NTU or higher are critical.
+            pH values below 5.0 or above 9.0 are critical, and values
+            outside 6.5–7.5 but within 5.0–9.0 are warning. Temperature
+            below 10 or above 50 °C is critical, and outside 20–40 °C but
+            within 10–50 °C is warning. Turbidity above 2 NTU requires
+            attention, while values above 5.00 NTU are critical.
           </span>
         </div>
       </section>
@@ -126,8 +128,9 @@ function SettingsPage({ theme, setTheme }) {
               <strong>Critical conditions</strong>
 
               <span>
-                Critical status is assigned when pH is outside its reference
-                range or turbidity reaches 5.00 NTU or higher.
+                Critical status is assigned when pH is below 5.0 or above
+                9.0, temperature is below 10 or above 50 °C, or turbidity
+                is above 5.00 NTU.
               </span>
             </div>
 
@@ -141,8 +144,9 @@ function SettingsPage({ theme, setTheme }) {
               <strong>Warning conditions</strong>
 
               <span>
-                Warning status is assigned when temperature is outside
-                20–28 °C or turbidity is above 1.50 NTU but below 5.00 NTU.
+                Warning status is assigned when pH is outside 6.5–7.5 but
+                within 5.0–9.0, temperature is outside 20–40 °C but within
+                10–50 °C, or turbidity is above 2 NTU but not above 5.00 NTU.
               </span>
             </div>
 
